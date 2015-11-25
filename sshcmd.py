@@ -5,7 +5,7 @@ USAGE:
     sshcmd.py [ip:port] [username] [password] [command]
 
 EXAMPLE:
-    sshcmd.py 192.168.2.100:22 yanganto mypassword ls
+    sshcmd.py 192.168.2.100:22 yanganto mypassword ls -l
 """
 import paramiko
 import sys
@@ -22,12 +22,13 @@ def ssh_command(addr, user, password, command):
 
     if ssh_session.active:
         ssh_session.exec_command(command)
-        #print(ssh_session.recv(1024))
+        print(ssh_session.recv(1024))
     return ssh_session.recv(1024)
 
 if __name__ == '__main__':
-    if len(sys.argv[1:]) != 4:
+    if len(sys.argv[1:]) < 5:
         print(__doc__)
         sys.exit(0)
     else:
-        ssh_command(*sys.argv[1:])
+        command = ' '.join(sys.argv[4:])
+        ssh_command(sys.argv[1], sys.argv[2], sys.argv[3], command)
