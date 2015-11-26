@@ -12,8 +12,9 @@ import sys
 
 
 def ssh_command(addr, user, password, command):
-    ip,  port_str = addr.split(':')
-    port = int(port_str) if port_str else 22
+    addr_li = addr.split(':')
+    ip = addr_li.pop(0)
+    port = int(addr_li[0]) if addr_li else 22
     client = paramiko.SSHClient()
     # client.load_host_keys('/home/yanganto/.ssh/known_hosts')
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -26,7 +27,7 @@ def ssh_command(addr, user, password, command):
     return ssh_session.recv(1024)
 
 if __name__ == '__main__':
-    if len(sys.argv[1:]) < 5:
+    if len(sys.argv[1:]) < 4:
         print(__doc__)
         sys.exit(0)
     else:
