@@ -31,6 +31,7 @@
 		show ussage
 """
 import os
+import sys
 import getopt
 import py_compile
 import re
@@ -46,24 +47,48 @@ OPTIMIZE_LEVEL = -1
 
 
 def main():
-	for dir_path, dir_name, files in os.walk(SOURCE):
+	try:
+		for dir_path, dir_names, files in os.walk(SOURCE):
 			for fullname in files:
 				if IGNORE_HIDDEN and  is_hindden(dir_path) or fullname[0] == '.':
 					if VERBOSE:
 						print('Ignore: ' + os.path.join(dir_path, fullname))
 					continue
 				file_name, extension = os.path.splitext(fullname)
-				source_file = os.path.join(dir_path, fullname) 
-				if extension == '.py':
-					target_file = re.sub( r'^' + SOURCE + r'(\w+)' + r'.py$', TARGET + r'\1'+ '.pyc' , source_file)
-					py_compile.compile(source_file, target_file, doraise=True, optimize=OPTIMIZE_LEVEL) 
+				source_file = os.path.join(dir_path, fullname)
+				if extension == '.py': 
+					target_file = re.sub( r'^' + SOURCE + r'(.+)' + r'.py$', TARGET + r'\1'+ '.pyc' , source_file)
 					if VERBOSE:
-						print( 'Compile: ' + source_file)
+						print('Compile: ' + source_file + ' -> ' + target_file)
+					if not DRYRUN:
+						py_compile.compile(source_file, target_file, doraise=True, optimize=OPTIMIZE_LEVEL)
 				elif extension in ('.pyc', '.pyo'):
-					pass
+					if VERBOSE:
+						print('Ignore: ' + os.path.join(dir_path, fullname))
 				else:
 					target_file = re.sub( r'^' + SOURCE, TARGET, source_file)
-					shutil.copyfile(source_file, target_file)
+					if VERBOSE:
+						print('Copy: ' + source_file + ' -> ' + target_file)
+					if not DRYRUN:
+						shutil.copyfile(source_file, target_file)
+			for dir_name in dir_names:
+				source_dir = os.path.join(dir_path, dir_name)
+				target_dir = re.sub( r'^' + SOURCE, TARGET, source_dir)
+				if VERBOSE:
+					print('Create: ' + target_dir)
+				if not DRYRUN:
+					os.mkdir(target_dir)
+
+		else:
+			if REMOVE_MODE:
+				if VERBOSE:
+					print("Removing source")
+				shutil.rmtree(SOURCE)
+	except:
+		print(sys.exc_info())
+		print("Roll Back")
+		shutil.rmtree(TARGET)
+
 
 def is_hindden(path): 
 	"""
@@ -88,4 +113,39 @@ if __name__ == '__main__':
 	assert is_hindden('./') == False, "relative current folder fail"
 	assert is_hindden('.') == False, "relative current path fail"
 	assert is_hindden('/') == False, "root path fail"
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "advrho:s:t:", ["all", "dry", "verbose", "remove", 'help', 'optimize',
+																 "source", "target"])
+	except getopt.GetoptError as e:
+		print(e)
+		print(__doc__)
+		sys.exit(-1)
+
+	for o, a in opts:
+		if o in ('-h', '--help'):
+			print(__doc__)
+			sys.exit(0)
+		elif o in ('-a', '--all'):
+			IGNORE_HIDDEN = False
+		elif o in ('-d', '--dry'):
+			VERBOSE = True
+			DRYRUN = True
+		elif o in ('-v', '--verbose'):
+			VERBOSE = True
+		elif o in ('-o', '--optimize'):
+			OPTIMIZE_LEVEL = int(a)
+		elif o in ('-s', '--source'):
+			SOURCE = a
+		elif o in ('-t', '--target'):
+			TARGET = a
+		elif o in ('-r', '--remove'):
+			REMOVE_MODE = True
+			pattern = re.compile("^" + os.path.abspath(SOURCE))
+			if pattern.match(os.path.abspath(TARGET)):
+				print('Target cant not under the source in remove mode')
+				sys.exit(-1)
+		else:
+			print("Unkown options: " + o)
+			print(__doc__)
+			sys.exit(-1)
 	main()
