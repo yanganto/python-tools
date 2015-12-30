@@ -36,7 +36,7 @@ def test_remote():
                     print("[{}] {}".format(response.status_code, path))
                 else:
                     print("     [{}] {}".format(response.status_code, path))
-                response.close()
+                #response.close()
 
         except:
             #print("[x] " + str(sys.exc_info()))
