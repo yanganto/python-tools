@@ -1,4 +1,4 @@
 [
-	{"module": "module/dirlistener"},
-	{"module": "module/enviroment"}
+	{"module": "dirlistener"},
+	{"module": "enviroment"}
 ]
