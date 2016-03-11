@@ -14,7 +14,7 @@
 
 	-t, --target
 		specific the target directory, or use ./output/
-	
+	/home/yanganto/Trend/EasyPhishing
 	-v, --verbose
 		verbose mode
 

