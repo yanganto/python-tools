@@ -4,14 +4,13 @@ import queue
 from time import sleep
 from random import randint
 
-import datetime
-
 default_max_time = 5
 debug = False
 
+
 class SendQ(threading.Thread):
     """
-    a singleton to send mail in a random time interval
+    a singleton to execute function in a random time interval
         max_time: the max time interval
         flag: flag for run/stop
     """
@@ -46,7 +45,15 @@ class SendQ(threading.Thread):
             pass
 
     @staticmethod
-    def send(*args):
+    def warpper(*args):
+        try:
+            SendQ.execute(*args)
+        except:
+            if debug:
+                print('[!!] Fail to execute, args: {}'.format(str(args)))
+
+    @staticmethod
+    def execute(*args):
         """
         need to implement
         """
@@ -55,7 +62,7 @@ class SendQ(threading.Thread):
     def run(self):
         while not self.q.empty() or self.flag:
             target = self.q.get()
-            SendQ.send(target)
+            SendQ.warpper(target)
             if self.flag:
                 sleep_time =randint(0, self.max_time)
                 if debug:
@@ -69,13 +76,25 @@ class SendQ(threading.Thread):
 
 
 if __name__ == '__main__':
+    import datetime
+    from random import choice
     debug = True
     target = namedtuple('Target', ['to'])
 
-    def override_function(target):
+    def success_funciton(target):
         print("send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
 
-    SendQ.send = override_function
+    def fail_function(target):
+        print("fail to send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
+        raise
+
+    def override_function(target):
+        """
+            fake send mail function, which can be success or fail
+        """
+        choice([success_funciton, fail_function])(target)
+
+    SendQ.execute = override_function
     t = target(to='test@test.com')
     sq1 = SendQ(t, 5)
     sq2 = SendQ(t, 2)
@@ -88,7 +107,7 @@ if __name__ == '__main__':
     SendQ(t)
     SendQ(t)
     SendQ(t)
-    print('sleeping 20s in main thread')
+    print('sleeping 10s in main thread')
     sleep(10)
     SendQ().stop()
 
