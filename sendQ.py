@@ -16,6 +16,7 @@ class SendQ(threading.Thread):
         flag: flag for run/stop
     """
     __instance = None
+    __slots__ = ('q', 'max_time', 'flag')
 
     def __new__(cls, target=None, max_time=default_max_time):
         if SendQ.__instance:
