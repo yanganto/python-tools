@@ -3,6 +3,7 @@ from collections import namedtuple
 import queue
 from time import sleep
 from random import randint
+import sys
 
 default_max_time = 5
 debug = False
@@ -50,7 +51,7 @@ class SendQ(threading.Thread):
             SendQ.execute(*args)
         except:
             if debug:
-                print('[!!] Fail to execute, args: {}'.format(str(args)))
+                print('[!!] Fail to execute, args: {}, exec_info: {}'.format(str(args), str(sys.exc_info())))
 
     @staticmethod
     def execute(*args):
@@ -86,7 +87,7 @@ if __name__ == '__main__':
 
     def fail_function(target):
         print("fail to send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
-        raise
+        raise Exception("Some Error")
 
     def override_function(target):
         """
