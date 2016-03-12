@@ -21,13 +21,13 @@ class SendQ(threading.Thread):
     def __new__(cls, target=None, max_time=default_max_time):
         if SendQ.__instance:
             if debug:
-                print('using old sendQ')
+                print('\tusing old sendQ')
             if target:
                 SendQ.__instance.q.put(target)
             SendQ.__instance.max_time = max_time
             return SendQ.__instance
         if debug:
-            print('using a new sendQ')
+            print('\tusing a new sendQ')
         return object.__new__(cls)
 
     def __init__(self, target=None, max_time=default_max_time):
@@ -62,17 +62,20 @@ class SendQ(threading.Thread):
 
     def run(self):
         while not self.q.empty() or self.flag:
-            target = self.q.get()
-            SendQ.warpper(target)
-            if self.flag:
-                sleep_time =randint(0, self.max_time)
-                if debug:
-                    print('waiting in 0 ~ {}, sleep {}'.format(self.max_time, sleep_time))
-                sleep(sleep_time)
+            try:
+                target = self.q.get(block=True, timeout=1)
+                SendQ.warpper(target)
+                if self.flag:
+                    sleep_time =randint(0, self.max_time)
+                    if debug:
+                        print('\twaiting in 0 ~ {}, sleep {}'.format(self.max_time, sleep_time))
+                    sleep(sleep_time)
+            except queue.Empty:
+                pass
 
     def stop(self):
         if debug:
-            print('exiting... {} remind'.format(self.q.qsize()))
+            print('\t{} remind task will be executed and then exit'.format(self.q.qsize()))
         self.flag = False
 
 
@@ -83,10 +86,10 @@ if __name__ == '__main__':
     target = namedtuple('Target', ['to'])
 
     def success_funciton(target):
-        print("send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
+        print("\tsend to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
 
     def fail_function(target):
-        print("fail to send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
+        print("\tfail to send to {} at {}".format(target.to, datetime.datetime.utcnow().isoformat()))
         raise Exception("Some Error")
 
     def override_function(target):
@@ -108,7 +111,7 @@ if __name__ == '__main__':
     SendQ(t)
     SendQ(t)
     SendQ(t)
-    print('sleeping 10s in main thread')
+    print('\tsleeping 10s in main thread')
     sleep(10)
     SendQ().stop()
 
