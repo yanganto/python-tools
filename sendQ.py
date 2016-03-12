@@ -50,8 +50,7 @@ class SendQ(threading.Thread):
         try:
             SendQ.execute(*args)
         except:
-            if debug:
-                print('[!!] Fail to execute, args: {}, exec_info: {}'.format(str(args), str(sys.exc_info())))
+            print('[!!] Fail to execute, args: {}, exec_info: {}'.format(str(args), str(sys.exc_info())))
 
     @staticmethod
     def execute(*args):
