@@ -11,6 +11,7 @@
 	-h, --help
 		show usage
 
+	Source: https://github.com/yanganto/python-tools/blob/master/tag_parser.py
 """
 
 
