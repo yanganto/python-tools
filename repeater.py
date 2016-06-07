@@ -1,4 +1,5 @@
 """Provide a warper for retry a function
+   Source: https://github.com/yanganto/python-tools/blob/master/repeater.py
 """
 
 
